@@ -1,0 +1,85 @@
+#include <iostream>
+#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <math.h>
+#define pi 3.1415926
+#define num_vector 3
+using namespace Eigen;
+using namespace std;
+
+void getAffine(Vector3d v1[num_vector], Vector3d v2[num_vector],Vector3d &T, Matrix3d &R)
+{//给两个点集，输出R和T
+#pragma region 第一步计算点集中心点
+	Vector3d centerA, centerB;
+	double xsum = 0, ysum = 0, zsum = 0;
+	for each (Vector3d v in v1)
+	{
+		xsum += v[0];
+		ysum += v[1];
+		zsum += v[2];
+	}
+	centerA << xsum/num_vector, ysum / num_vector, zsum / num_vector;
+	xsum = 0, ysum = 0, zsum = 0;
+	for each (Vector3d v in v2)
+	{
+		xsum += v[0];
+		ysum += v[1];
+		zsum += v[2];
+	}
+	centerB << xsum / num_vector, ysum / num_vector, zsum / num_vector;
+#pragma endregion
+
+#pragma region 第二步，去中心化，点集移动到原点
+	Vector3d tempv1[num_vector],tempv2[num_vector];
+	for (int i = 0; i < num_vector; i++)
+	{
+		tempv1[i] = v1[i] - centerA;
+		tempv2[i] = v2[i] - centerA;
+	}
+#pragma endregion
+
+#pragma region 第三步，计算新点集的协方差矩阵
+	Matrix3d H = Matrix3d::Zero(3, 3);//协方差矩阵
+	for (int i = 0; i < num_vector; i++)
+	{
+		H += tempv1[i] * tempv2[i].transpose();
+	}
+#pragma endregion
+
+#pragma region 第四步,通过SVD分解求得矩阵的U，S，V
+	/*BDCSVD<Matrix3d> svd(H, ComputeThinU | ComputeThinV);*/
+	JacobiSVD<Matrix3d> svd(H, ComputeThinU | ComputeThinV);
+	Matrix3d U = svd.matrixU();
+	Matrix3d V = svd.matrixV();
+	R = V*U.transpose();
+	/*cout << "R matrix:" << endl << R << endl;*/
+#pragma endregion
+
+#pragma region 第五步，计算转移向量T=-R*centerA+centerB
+	T = centerB-R*centerA;
+	/*cout << "T matrix:" << endl << T << endl;*/
+#pragma endregion
+
+}
+
+int main()
+{
+#pragma region 定义变量
+	Vector3d v1[num_vector];//第一个点集
+	Vector3d v2[num_vector];//第二个点集
+	Vector3d T;//平移向量
+	Matrix3d R;//旋转矩阵
+#pragma endregion
+	v1[0] << 1, 0, 0;
+	v1[1] << 2, 0, 0;
+	v1[2] << 3, 0, 0;
+
+	v2[0] << 0, 1, 0;
+	v2[1] << 0, 2, 0;
+	v2[2] << 0, 3, 0;
+	getAffine(v1, v2, T, R);
+	
+	cout << "R matrix:" << endl << R << endl;
+	cout << "T matrix:" << endl << T << endl;
+	cout << "Trans matrix:" << endl << R*v2[1]+T << endl;
+}
