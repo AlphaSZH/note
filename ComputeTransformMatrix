@@ -8,7 +8,7 @@ using namespace Eigen;
 using namespace std;
 
 void getAffine(Vector3d v1[num_vector], Vector3d v2[num_vector],Vector3d &T, Matrix3d &R)
-{//给两个点集，输出R和T
+{//给两个点集，输出R和T,计算得到的结果是V1点集向V2点集变换所得
 #pragma region 第一步计算点集中心点
 	Vector3d centerA, centerB;
 	double xsum = 0, ysum = 0, zsum = 0;
